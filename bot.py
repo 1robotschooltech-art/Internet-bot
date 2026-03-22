@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
 
-API_TOKEN =8694337840: AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g   # ← вставь реальный
+API_TOKEN = '8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g'
 
 bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()
