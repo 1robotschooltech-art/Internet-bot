@@ -15,7 +15,7 @@ class Form(StatesGroup):
     surname = State()
     address = State()
     phone = State()
- @dp.message_handler(commands=start)
+@dp.message_handler(commands=['start', 'help'])
 async def start(message: types.Message):
     await Form.name.set()
     await message.reply("Привет! Введи своё имя.")
