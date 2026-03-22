@@ -43,7 +43,7 @@ async def process_address(message: types.Message, state: FSMContext):
 async def process_phone(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await bot.send_message 8240806734  
-        f"Клиент:\nИмя: {data }\nФамилия: {data }\nАдрес: {data }\nТел: {message.text}")
+        f"Клиент:\nИмя: {data.get('name', 'не указано')}\nФамилия: {data.get('surname', 'не указано')}\nАдрес: {data.get('address', 'не указано')}\nТел: {message.text}"
     await message.reply("Готово! Свяжемся.")
     await state.finish()
 
