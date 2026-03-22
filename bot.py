@@ -17,9 +17,8 @@ class Form(StatesGroup):
     phone = State()
 
 @dp.message_handler(commands= )
-async def start(message: types.Message):
-    await Form.name.set()
-    await message.reply("Привет! Введи своё имя.")
+async def cmd_start(message: types.Message):
+    await message.reply("Запустился! Что надо?")
 
 @dp.message_handler(state=Form.name)
 async def process_name(message: types.Message, state: FSMContext):
