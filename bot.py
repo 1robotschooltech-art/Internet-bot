@@ -3,6 +3,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
+import asyncio
 
 API_TOKEN = '8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g'
 
@@ -17,26 +18,26 @@ class Form(StatesGroup):
     phone = State()
 
 @dp.message(Command("start"))
-async def start(message: types.Message):
-    await Form.name.set()
+async def start(message: types.Message, state: FSMContext):
+    await state.set_state(Form.name)
     await message.reply("Привет! Введи своё имя.")
 
 @dp.message(Form.name)
 async def process_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
-    await Form.surname.set()
+    await state.set_state(Form.surname)
     await message.reply("Фамилию.")
 
 @dp.message(Form.surname)
 async def process_surname(message: types.Message, state: FSMContext):
     await state.update_data(surname=message.text)
-    await Form.address.set()
+    await state.set_state(Form.address)
     await message.reply("Адрес.")
 
 @dp.message(Form.address)
 async def process_address(message: types.Message, state: FSMContext):
     await state.update_data(address=message.text)
-    await Form.phone.set()
+    await state.set_state(Form.phone)
     await message.reply("Телефон.")
 
 @dp.message(Form.phone)
@@ -50,7 +51,10 @@ async def process_phone(message: types.Message, state: FSMContext):
              f"Тел: {message.text}"
     )
     await message.reply("Готово! Свяжемся.")
-    await state.finish()
+    await state.clear()
+
+async def main():
+    await dp.start_polling(bot)
 
 if __name__ == '__main__':
-    dp.run_polling(bot)
+    asyncio.run(main())
