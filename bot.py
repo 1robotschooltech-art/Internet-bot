@@ -1,9 +1,9 @@
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher
+from aiogram.types import Message
+from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command
-import asyncio
 
 API_TOKEN = '8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g'
 
