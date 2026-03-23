@@ -17,29 +17,11 @@ class Form(StatesGroup):
     address = State()
     phone = State()
 
-@dp.message(Command("start", "menu"))
-async def show_menu(message: types.Message):
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="Самоанализ 10 шагов", callback_data="analiz10")
-        ],
-        [
-            InlineKeyboardButton(text="10 шагов mini", callback_data="mini")
-        ],
-        [
-            InlineKeyboardButton(text="1 шаг на день", callback_data="day1")
-        ],
-        [
-            InlineKeyboardButton(text="2 шаг на день", callback_data="day2")
-        ],
-        [
-            InlineKeyboardButton(text="3 шаг на день", callback_data="day3")
-        ],
-        [
-            InlineKeyboardButton(text="Настройки", callback_data="settings")
-        ]
-    ])
-    await message.answer("Привет! Выбери, что хочешь сделать:", reply_markup=keyboard)
+@dp.message(Command("start"))
+async def start(message: types.Message, state: FSMContext):
+    await state.set_state(Form.name)
+    await message.reply("Привет! Введи своё имя.")
+
 @dp.message(Form.name)
 async def process_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
