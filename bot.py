@@ -10,19 +10,20 @@ import speedtest  # pip install speedtest-cli
 bot = Bot(token="8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g")
 dp = Dispatcher(storage=MemoryStorage())
 
-# Клавиатура меню (после регистрации)
+# Клавиатура меню — исправленный вариант, без ошибок
 menu_kb = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton("Проверить скорость"),
-            KeyboardButton("Сообщить о сбое")
+            KeyboardButton(text="Проверить скорость"),
+            KeyboardButton(text="Сообщить о сбое")
         ],
         [
-            KeyboardButton("Мой баланс"),
-            KeyboardButton("Поддержка")
+            KeyboardButton(text="Мой баланс"),
+            KeyboardButton(text="Поддержка")
         ]
     ],
-    resize_keyboard=True
+    resize_keyboard=True,
+    input_field_placeholder="Выбери, что нужно..."  # добавь, если хочешь
 )
 
 class Registration(StatesGroup):
@@ -87,7 +88,6 @@ async def process_email(message: types.Message, state: FSMContext):
     )
     await state.clear()
 
-# Остальные хэндлеры (скопировал из прошлого)
 @dp.message(lambda m: m.text == "Проверить скорость")
 async def speed_test(message: types.Message):
     await message.answer("Запускаю тест... подожди 10 секунд.")
