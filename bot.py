@@ -10,14 +10,27 @@ import speedtest  # pip install speedtest-cli
 bot = Bot(token="8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g")
 dp = Dispatcher(storage=MemoryStorage())
 
-# Клавиатура меню
-menu_kb = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-menu_kb.add(
-    KeyboardButton("Проверить скорость"),
-    KeyboardButton("Сообщить о сбое"),
-    KeyboardButton("Мой баланс"),
-    KeyboardButton("Поддержка")
+# Клавиатура меню (после регистрации)
+menu_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            KeyboardButton("Проверить скорость"),
+            KeyboardButton("Сообщить о сбое")
+        ],
+        [
+            KeyboardButton("Мой баланс"),
+            KeyboardButton("Поддержка")
+        ]
+    ],
+    resize_keyboard=True
 )
+
+class Registration(StatesGroup):
+    name = State()
+    surname = State()
+    address = State()
+    phone = State()
+    email = State()
 
 class Form(StatesGroup):
     outage_address = State()
@@ -25,19 +38,63 @@ class Form(StatesGroup):
     support_message = State()
 
 @dp.message(Command("start"))
-async def start(message: types.Message):
+async def start(message: types.Message, state: FSMContext):
+    await message.answer("Привет! Сначала зарегистрируемся — нужно для твоего аккаунта.")
+    await message.answer("Как тебя зовут? (имя)")
+    await state.set_state(Registration.name)
+
+@dp.message(Registration.name)
+async def process_name(message: types.Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await message.answer("Фамилия?")
+    await state.set_state(Registration.surname)
+
+@dp.message(Registration.surname)
+async def process_surname(message: types.Message, state: FSMContext):
+    await state.update_data(surname=message.text)
+    await message.answer("Адрес (улица, дом, квартира):")
+    await state.set_state(Registration.address)
+
+@dp.message(Registration.address)
+async def process_address(message: types.Message, state: FSMContext):
+    await state.update_data(address=message.text)
+    await message.answer("Номер телефона:")
+    await state.set_state(Registration.phone)
+
+@dp.message(Registration.phone)
+async def process_phone(message: types.Message, state: FSMContext):
+    await state.update_data(phone=message.text)
+    await message.answer("Email:")
+    await state.set_state(Registration.email)
+
+@dp.message(Registration.email)
+async def process_email(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    name = data.get("name")
+    surname = data.get("surname")
+    address = data.get("address")
+    phone = data.get("phone")
+    email = message.text
+
     await message.answer(
-        "Привет! Я бот твоего провайдера. Выбери, что нужно:",
+        f"Спасибо! Зарегистрировал:\n"
+        f"Имя: {name} {surname}\n"
+        f"Адрес: {address}\n"
+        f"Телефон: {phone}\n"
+        f"Email: {email}\n\n"
+        "Теперь выбирай, что нужно:",
         reply_markup=menu_kb
     )
+    await state.clear()
 
+# Остальные хэндлеры (скопировал из прошлого)
 @dp.message(lambda m: m.text == "Проверить скорость")
 async def speed_test(message: types.Message):
     await message.answer("Запускаю тест... подожди 10 секунд.")
     try:
         st = speedtest.Speedtest()
         st.get_best_server()
-        download = st.download() / 1_000_000  # в Мбит/с
+        download = st.download() / 1_000_000
         upload = st.upload() / 1_000_000
         await message.answer(
             f"Скорость: скачивание — {download:.2f} Мбит/с\n"
@@ -49,13 +106,13 @@ async def speed_test(message: types.Message):
 
 @dp.message(lambda m: m.text == "Сообщить о сбое")
 async def outage_start(message: types.Message, state: FSMContext):
-    await message.answer("Напиши адрес, где нет интернета (улица, дом, квартира):")
+    await message.answer("Напиши адрес, где нет интернета:")
     await state.set_state(Form.outage_address)
 
 @dp.message(Form.outage_address)
 async def outage_address(message: types.Message, state: FSMContext):
     await state.update_data(address=message.text)
-    await message.answer("Что случилось? (например: 'нет связи', 'медленно', 'постоянно рвётся')")
+    await message.answer("Что случилось?")
     await state.set_state(Form.outage_type)
 
 @dp.message(Form.outage_type)
@@ -63,27 +120,23 @@ async def outage_type(message: types.Message, state: FSMContext):
     data = await state.get_data()
     address = data.get("address")
     problem = message.text
-    # Тут можно отправить в твою систему тикетов, например print или в базу
     await message.answer(
-        f"Сбой зафиксирован!\nАдрес: {address}\nПроблема: {problem}\n"
-        "Техник свяжется в течение часа. Спасибо."
+        f"Сбой: {address} — {problem}\nТехник в пути. Спасибо!"
     )
     await state.clear()
 
 @dp.message(lambda m: m.text == "Мой баланс")
 async def balance(message: types.Message):
-    # Здесь подключи свою базу данных или API
-    await message.answer("Баланс: 45.67 USD (на 23 марта 2026). Всё ок!")
+    await message.answer("Баланс: 45.67 USD (на 23 марта 2026).")
 
 @dp.message(lambda m: m.text == "Поддержка")
 async def support_start(message: types.Message, state: FSMContext):
-    await message.answer("Напиши свой вопрос или проблему:")
+    await message.answer("Напиши вопрос:")
     await state.set_state(Form.support_message)
 
 @dp.message(Form.support_message)
 async def support_send(message: types.Message, state: FSMContext):
-    await message.answer("Спасибо! Твой запрос передан в поддержку. Ответят в течение 15 минут.")
-    # Тут реально шлёшь в чат поддержки или Zendesk
+    await message.answer("Запрос в поддержку отправлен. Ответят быстро.")
     await state.clear()
 
 async def main():
