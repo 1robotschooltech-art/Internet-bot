@@ -10,11 +10,10 @@ import speedtest  # pip install speedtest-cli
 bot = Bot(token="8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g")
 dp = Dispatcher(storage=MemoryStorage())
 
-# Твой ID — сюда будут лететь все заявки
 ADMIN_ID = 8240806734
 
-# Глобальный словарь для хранения данных юзеров
-user_data =  # {user_id: {'name':.., 'surname':.., 'address':.., 'phone':.., 'email':..}}
+# Глобальный словарь: user_id → данные
+user_data =  # сюда будем складывать {user_id: {...}}
 
 menu_kb = ReplyKeyboardMarkup(
     keyboard=[
@@ -83,6 +82,8 @@ async def process_email(message: types.Message, state: FSMContext):
     email = message.text
 
     user_id = message.from_user.id
+
+    # Сохраняем в глобальный словарь
     user_data = {
         'name': name,
         'surname': surname,
@@ -91,7 +92,7 @@ async def process_email(message: types.Message, state: FSMContext):
         'email': email
     }
 
-    # Отправляем тебе полную инфу о клиенте
+    # Отправляем тебе полную инфу
     await bot.send_message(
         ADMIN_ID,
         f"Новая регистрация!\n"
@@ -147,9 +148,9 @@ async def outage_type(message: types.Message, state: FSMContext):
     problem = message.text
 
     user_id = message.from_user.id
-    ud = user_data.get(user_id,)
+    ud = user_data.get(user_id, {})  # если нет — пустой dict
 
-    # Отправляем тебе заявку
+    # Отправляем заявку
     await bot.send_message(
         ADMIN_ID,
         f"Сбой от {user_id}!\n"
@@ -176,9 +177,8 @@ async def support_send(message: types.Message, state: FSMContext):
     question = message.text
 
     user_id = message.from_user.id
-    ud = user_data.get(user_id,)
+    ud = user_data.get(user_id, {})  # если нет — пустой
 
-    # Отправляем тебе запрос в поддержку
     await bot.send_message(
         ADMIN_ID,
         f"Поддержка от {user_id}!\n"
