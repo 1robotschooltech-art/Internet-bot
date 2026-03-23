@@ -13,6 +13,9 @@ dp = Dispatcher(storage=MemoryStorage())
 # Твой ID — сюда будут лететь все заявки
 ADMIN_ID = 8240806734
 
+# Глобальный словарь для хранения данных юзеров
+user_data =  # {user_id: {'name':.., 'surname':.., 'address':.., 'phone':.., 'email':..}}
+
 menu_kb = ReplyKeyboardMarkup(
     keyboard=[
         [
@@ -73,17 +76,26 @@ async def process_phone(message: types.Message, state: FSMContext):
 @dp.message(Registration.email)
 async def process_email(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    name = data.get("name")
-    surname = data.get("surname")
-    address = data.get("address")
-    phone = data.get("phone")
+    name = data.get("name", "")
+    surname = data.get("surname", "")
+    address = data.get("address", "")
+    phone = data.get("phone", "")
     email = message.text
+
+    user_id = message.from_user.id
+    user_data = {
+        'name': name,
+        'surname': surname,
+        'address': address,
+        'phone': phone,
+        'email': email
+    }
 
     # Отправляем тебе полную инфу о клиенте
     await bot.send_message(
         ADMIN_ID,
         f"Новая регистрация!\n"
-        f"ID: {message.from_user.id}\n"
+        f"ID: {user_id}\n"
         f"Имя: {name} {surname}\n"
         f"Адрес: {address}\n"
         f"Телефон: {phone}\n"
@@ -134,12 +146,16 @@ async def outage_type(message: types.Message, state: FSMContext):
     address = data.get("address")
     problem = message.text
 
+    user_id = message.from_user.id
+    ud = user_data.get(user_id,)
+
     # Отправляем тебе заявку
     await bot.send_message(
         ADMIN_ID,
-        f"Сбой от {message.from_user.id}!\n"
-        f"Имя: {data.get('name', 'неизвестно')} {data.get('surname', '')}\n"
-        f"Адрес: {address}\n"
+        f"Сбой от {user_id}!\n"
+        f"Имя: {ud.get('name', 'неизвестно')} {ud.get('surname', '')}\n"
+        f"Адрес: {ud.get('address', 'неизвестно')}\n"
+        f"Телефон: {ud.get('phone', 'неизвестно')}\n"
         f"Проблема: {problem}"
     )
 
@@ -157,16 +173,18 @@ async def support_start(message: types.Message, state: FSMContext):
 
 @dp.message(Form.support_message)
 async def support_send(message: types.Message, state: FSMContext):
-    data = await state.get_data()
     question = message.text
+
+    user_id = message.from_user.id
+    ud = user_data.get(user_id,)
 
     # Отправляем тебе запрос в поддержку
     await bot.send_message(
         ADMIN_ID,
-        f"Поддержка от {message.from_user.id}!\n"
-        f"Имя: {data.get('name', 'неизвестно')} {data.get('surname', '')}\n"
-        f"Адрес: {data.get('address', 'неизвестно')}\n"
-        f"Телефон: {data.get('phone', 'неизвестно')}\n"
+        f"Поддержка от {user_id}!\n"
+        f"Имя: {ud.get('name', 'неизвестно')} {ud.get('surname', '')}\n"
+        f"Адрес: {ud.get('address', 'неизвестно')}\n"
+        f"Телефон: {ud.get('phone', 'неизвестно')}\n"
         f"Вопрос: {question}"
     )
 
