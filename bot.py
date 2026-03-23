@@ -1,73 +1,93 @@
+import asyncio
 from aiogram import Bot, Dispatcher, types
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.filters import Command
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command
-import asyncio
-import os
+from aiogram.fsm.storage.memory import MemoryStorage
+import speedtest  # pip install speedtest-cli
 
-# Лучше через .env, но пока так
-API_TOKEN = '8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g'
-ADMIN_ID = 8240806734
+bot = Bot(token="AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g")
+dp = Dispatcher(storage=MemoryStorage())
 
-bot = Bot(token=API_TOKEN)
-storage = MemoryStorage()
-dp = Dispatcher(storage=storage)
+# Клавиатура меню
+menu_kb = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+menu_kb.add(
+    KeyboardButton("Проверить скорость"),
+    KeyboardButton("Сообщить о сбое"),
+    KeyboardButton("Мой баланс"),
+    KeyboardButton("Поддержка")
+)
 
 class Form(StatesGroup):
-    name = State()
-    surname = State()
-    address = State()
-    phone = State()
-    email = State()
+    outage_address = State()
+    outage_type = State()
+    support_message = State()
 
 @dp.message(Command("start"))
-async def start(message: types.Message, state: FSMContext):
-    await state.set_state(Form.name)
-    await message.reply("Привет! Введи своё имя.")
-
-@dp.message(Form.name)
-async def process_name(message: types.Message, state: FSMContext):
-    await state.update_data(name=message.text)
-    await state.set_state(Form.surname)
-    await message.reply("Фамилию.")
-
-@dp.message(Form.surname)
-async def process_surname(message: types.Message, state: FSMContext):
-    await state.update_data(surname=message.text)
-    await state.set_state(Form.address)
-    await message.reply("Адрес.")
-
-@dp.message(Form.address)
-async def process_address(message: types.Message, state: FSMContext):
-    await state.update_data(address=message.text)
-    await state.set_state(Form.phone)
-    await message.reply("Телефон.")
-
-@dp.message(Form.phone)
-async def process_phone(message: types.Message, state: FSMContext):
-    await state.update_data(phone=message.text)
-    await state.set_state(Form.email)
-    await message.reply("Теперь email, пожалуйста.")
-
-@dp.message(Form.email)
-async def process_email(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    email = message.text
-    await bot.send_message(
-        chat_id=ADMIN_ID,
-        text=f"Клиент:\n"
-             f"Имя: {data.get('name', '—')}\n"
-             f"Фамилия: {data.get('surname', '—')}\n"
-             f"Адрес: {data.get('address', '—')}\n"
-             f"Тел: {data.get('phone', '—')}\n"
-             f"Email: {email}"
+async def start(message: types.Message):
+    await message.answer(
+        "Привет! Я бот твоего провайдера. Выбери, что нужно:",
+        reply_markup=menu_kb
     )
-    await message.reply("Всё, готово! Скоро свяжемся.")
-    await state.finish()
+
+@dp.message(lambda m: m.text == "Проверить скорость")
+async def speed_test(message: types.Message):
+    await message.answer("Запускаю тест... подожди 10 секунд.")
+    try:
+        st = speedtest.Speedtest()
+        st.get_best_server()
+        download = st.download() / 1_000_000  # в Мбит/с
+        upload = st.upload() / 1_000_000
+        await message.answer(
+            f"Скорость: скачивание — {download:.2f} Мбит/с\n"
+            f"загрузка — {upload:.2f} Мбит/с\n"
+            f"пинг — {st.results.ping} мс"
+        )
+    except Exception:
+        await message.answer("Не смог измерить. Проверь интернет или попробуй позже.")
+
+@dp.message(lambda m: m.text == "Сообщить о сбое")
+async def outage_start(message: types.Message, state: FSMContext):
+    await message.answer("Напиши адрес, где нет интернета (улица, дом, квартира):")
+    await state.set_state(Form.outage_address)
+
+@dp.message(Form.outage_address)
+async def outage_address(message: types.Message, state: FSMContext):
+    await state.update_data(address=message.text)
+    await message.answer("Что случилось? (например: 'нет связи', 'медленно', 'постоянно рвётся')")
+    await state.set_state(Form.outage_type)
+
+@dp.message(Form.outage_type)
+async def outage_type(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    address = data.get("address")
+    problem = message.text
+    # Тут можно отправить в твою систему тикетов, например print или в базу
+    await message.answer(
+        f"Сбой зафиксирован!\nАдрес: {address}\nПроблема: {problem}\n"
+        "Техник свяжется в течение часа. Спасибо."
+    )
+    await state.clear()
+
+@dp.message(lambda m: m.text == "Мой баланс")
+async def balance(message: types.Message):
+    # Здесь подключи свою базу данных или API
+    await message.answer("Баланс: 45.67 USD (на 23 марта 2026). Всё ок!")
+
+@dp.message(lambda m: m.text == "Поддержка")
+async def support_start(message: types.Message, state: FSMContext):
+    await message.answer("Напиши свой вопрос или проблему:")
+    await state.set_state(Form.support_message)
+
+@dp.message(Form.support_message)
+async def support_send(message: types.Message, state: FSMContext):
+    await message.answer("Спасибо! Твой запрос передан в поддержку. Ответят в течение 15 минут.")
+    # Тут реально шлёшь в чат поддержки или Zendesk
+    await state.clear()
 
 async def main():
     await dp.start_polling(bot)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())
