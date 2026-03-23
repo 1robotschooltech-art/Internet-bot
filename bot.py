@@ -13,7 +13,7 @@ dp = Dispatcher(storage=MemoryStorage())
 ADMIN_ID = 8240806734
 
 # Глобальный словарь: user_id → данные
-user_data ={user_id: {...}}
+user_data =
 
 menu_kb = ReplyKeyboardMarkup(
     keyboard=[
