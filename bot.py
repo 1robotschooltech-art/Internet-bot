@@ -7,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 import speedtest  # pip install speedtest-cli
 
-bot = Bot(token="AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g")
+bot = Bot(token="8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g")
 dp = Dispatcher(storage=MemoryStorage())
 
 # Клавиатура меню
