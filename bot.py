@@ -4,8 +4,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
 import asyncio
+import os
 
+# Лучше через .env, но пока так
 API_TOKEN = '8694337840:AAGPruuIzE5zfrh5fmiQxfR0w03-RQT_D7g'
+ADMIN_ID = 8240806734
 
 bot = Bot(token=API_TOKEN)
 storage = MemoryStorage()
@@ -16,6 +19,7 @@ class Form(StatesGroup):
     surname = State()
     address = State()
     phone = State()
+    email = State()
 
 @dp.message(Command("start"))
 async def start(message: types.Message, state: FSMContext):
@@ -42,16 +46,25 @@ async def process_address(message: types.Message, state: FSMContext):
 
 @dp.message(Form.phone)
 async def process_phone(message: types.Message, state: FSMContext):
+    await state.update_data(phone=message.text)
+    await state.set_state(Form.email)
+    await message.reply("Теперь email, пожалуйста.")
+
+@dp.message(Form.email)
+async def process_email(message: types.Message, state: FSMContext):
     data = await state.get_data()
+    email = message.text
     await bot.send_message(
-        chat_id=8240806734,
-        text=f"Клиент:\nИмя: {data.get('name', 'не указано')}\n"
-             f"Фамилия: {data.get('surname', 'не указано')}\n"
-             f"Адрес: {data.get('address', 'не указано')}\n"
-             f"Тел: {message.text}"
+        chat_id=ADMIN_ID,
+        text=f"Клиент:\n"
+             f"Имя: {data.get('name', '—')}\n"
+             f"Фамилия: {data.get('surname', '—')}\n"
+             f"Адрес: {data.get('address', '—')}\n"
+             f"Тел: {data.get('phone', '—')}\n"
+             f"Email: {email}"
     )
-    await message.reply("Готово! Свяжемся.")
-    await state.clear()
+    await message.reply("Всё, готово! Скоро свяжемся.")
+    await state.finish()
 
 async def main():
     await dp.start_polling(bot)
